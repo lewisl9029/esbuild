@@ -1,12 +1,12 @@
 package bundler_tests
 
 import (
-        "regexp"
-        "strings"
-        "testing"
+	"regexp"
+	"strings"
+	"testing"
 
-        "github.com/evanw/esbuild/internal/config"
-        "github.com/evanw/esbuild/internal/logger"
+	"github.com/evanw/esbuild/internal/config"
+	"github.com/evanw/esbuild/internal/logger"
 )
 
 var glob_suite = suite{
@@ -294,9 +294,9 @@ func TestGlobWildcardNoSlash(t *testing.T) {
 }
 
 func TestGlobPluginRewrite(t *testing.T) {
-       glob_suite.expectBundledUnix(t, bundled{
-               files: map[string]string{
-                       "/entry.js": `
+	glob_suite.expectBundledUnix(t, bundled{
+		files: map[string]string{
+			"/entry.js": `
                                 const ab = Math.random() < 0.5 ? 'a.js' : 'b.js'
                                 console.log({
                                         concat: {
@@ -309,33 +309,33 @@ func TestGlobPluginRewrite(t *testing.T) {
                                         },
                                 })
                         `,
-                       "/src/a.js": `module.exports = 'a'`,
-                       "/src/b.js": `module.exports = 'b'`,
-               },
-               entryPaths: []string{"/entry.js"},
-               options: config.Options{
-                       Mode:          config.ModeBundle,
-                       AbsOutputFile: "/out.js",
-                       Plugins: []config.Plugin{{
-                               OnResolve: []config.OnResolve{
-                                       {
-                                               Filter: regexp.MustCompile("^@/"),
-                                               Callback: func(args config.OnResolveArgs) config.OnResolveResult {
-                                                       return config.OnResolveResult{
-                                                               Path: logger.Path{Text: strings.Replace(args.Path, "@/", "/src/", 1), Namespace: "file"},
-                                                       }
-                                               },
-                                       },
-                               },
-                       }},
-               },
-       })
+			"/src/a.js": `module.exports = 'a'`,
+			"/src/b.js": `module.exports = 'b'`,
+		},
+		entryPaths: []string{"/entry.js"},
+		options: config.Options{
+			Mode:          config.ModeBundle,
+			AbsOutputFile: "/out.js",
+			Plugins: []config.Plugin{{
+				OnResolve: []config.OnResolve{
+					{
+						Filter: regexp.MustCompile("^@/"),
+						Callback: func(args config.OnResolveArgs) config.OnResolveResult {
+							return config.OnResolveResult{
+								Path: logger.Path{Text: strings.Replace(args.Path, "@/", "/src/", 1), Namespace: "file"},
+							}
+						},
+					},
+				},
+			}},
+		},
+	})
 }
 
 func TestGlobPluginExternal(t *testing.T) {
-       glob_suite.expectBundledUnix(t, bundled{
-               files: map[string]string{
-                       "/entry.js": `
+	glob_suite.expectBundledUnix(t, bundled{
+		files: map[string]string{
+			"/entry.js": `
                                 const ab = Math.random() < 0.5 ? 'a.js' : 'b.js'
                                 console.log({
                                         concat: {
@@ -348,21 +348,21 @@ func TestGlobPluginExternal(t *testing.T) {
                                         },
                                 })
                         `,
-               },
-               entryPaths: []string{"/entry.js"},
-               options: config.Options{
-                       Mode:          config.ModeBundle,
-                       AbsOutputFile: "/out.js",
-                       Plugins: []config.Plugin{{
-                               OnResolve: []config.OnResolve{
-                                       {
-                                               Filter: regexp.MustCompile("^@/"),
-                                               Callback: func(args config.OnResolveArgs) config.OnResolveResult {
-                                                       return config.OnResolveResult{External: true}
-                                               },
-                                       },
-                               },
-                       }},
-               },
-       })
+		},
+		entryPaths: []string{"/entry.js"},
+		options: config.Options{
+			Mode:          config.ModeBundle,
+			AbsOutputFile: "/out.js",
+			Plugins: []config.Plugin{{
+				OnResolve: []config.OnResolve{
+					{
+						Filter: regexp.MustCompile("^@/"),
+						Callback: func(args config.OnResolveArgs) config.OnResolveResult {
+							return config.OnResolveResult{External: true}
+						},
+					},
+				},
+			}},
+		},
+	})
 }
