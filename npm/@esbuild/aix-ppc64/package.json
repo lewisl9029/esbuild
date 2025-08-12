@@ -1,5 +1,5 @@
 {
-  "name": "@esbuild/aix-ppc64",
+  "name": "@lewisl9029/esbuild-aix-ppc64",
   "version": "0.25.8-1",
   "description": "The IBM AIX PowerPC 64-bit binary for esbuild, a JavaScript bundler.",
   "repository": {

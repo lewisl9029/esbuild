@@ -1,5 +1,5 @@
 {
-  "name": "@esbuild/android-x64",
+  "name": "@lewisl9029/esbuild-android-x64",
   "version": "0.25.8-1",
   "description": "A WebAssembly shim for esbuild on Android x64.",
   "repository": {

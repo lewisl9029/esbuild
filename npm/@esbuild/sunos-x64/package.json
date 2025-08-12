@@ -1,5 +1,5 @@
 {
-  "name": "@esbuild/sunos-x64",
+  "name": "@lewisl9029/esbuild-sunos-x64",
   "version": "0.25.8-1",
   "description": "The illumos 64-bit binary for esbuild, a JavaScript bundler.",
   "repository": {
