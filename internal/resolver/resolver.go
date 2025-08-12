@@ -600,16 +600,14 @@ func (res *Resolver) ResolveGlob(sourceDir string, importPathPattern []helpers.G
 	}
 	firstPrefix := importPathPattern[0].Prefix
 
-	// Glob patterns only work for relative URLs
+	// Glob patterns only work for relative URLs unless the path is already absolute
 	if !strings.HasPrefix(firstPrefix, "./") && !strings.HasPrefix(firstPrefix, "../") &&
-		!strings.HasPrefix(firstPrefix, ".\\") && !strings.HasPrefix(firstPrefix, "..\\") {
+		!strings.HasPrefix(firstPrefix, ".\\") && !strings.HasPrefix(firstPrefix, "..\\") &&
+		!r.fs.IsAbs(firstPrefix) {
 		if kind == ast.ImportEntryPoint {
 			// Be permissive about forgetting "./" for entry points since it's common
-			// to omit "./" on the command line. But don't accidentally treat absolute
-			// paths as relative (even on Windows).
-			if !r.fs.IsAbs(firstPrefix) {
-				firstPrefix = "./" + firstPrefix
-			}
+			// to omit "./" on the command line.
+			firstPrefix = "./" + firstPrefix
 		} else {
 			// Don't allow omitting "./" for other imports since node doesn't let you do this either
 			if r.debugLogs != nil {

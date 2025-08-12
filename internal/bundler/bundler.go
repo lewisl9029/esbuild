@@ -468,7 +468,44 @@ func parseFile(args parseArgs) {
 
 					// Special-case glob pattern imports
 					if record.GlobPattern != nil {
-						prettyPath := helpers.GlobPatternToString(record.GlobPattern.Parts)
+						patternText := helpers.GlobPatternToString(record.GlobPattern.Parts)
+
+						resolveResult, didLogError, _ := RunOnResolvePlugins(
+							args.options.Plugins,
+							args.res,
+							args.log,
+							args.fs,
+							&args.caches.FSCache,
+							&source,
+							record.Range,
+							source.KeyPath,
+							patternText,
+							attrs,
+							record.GlobPattern.Kind,
+							absResolveDir,
+							pluginData,
+							args.options.LogPathStyle,
+							true,
+						)
+						if didLogError {
+							continue
+						}
+						if resolveResult != nil {
+							if resolveResult.PathPair.IsExternal {
+								resolveResult.PathPair.Primary.ImportAttributes = attrs
+								if resolveResult.PathPair.HasSecondary() {
+									resolveResult.PathPair.Secondary.ImportAttributes = attrs
+								}
+								result.resolveResults[importRecordIndex] = resolveResult
+								if record.Phase != ast.EvaluationPhase {
+									reportExplicitPhaseImport(args.log, &tracker, record.Range, record.Phase, true, args.options.OutputFormat)
+								}
+								continue
+							}
+							patternText = resolveResult.PathPair.Primary.Text
+							record.GlobPattern.Parts = helpers.ParseGlobPattern(patternText)
+						}
+
 						phase := ""
 						switch record.Phase {
 						case ast.DeferPhase:
@@ -476,11 +513,12 @@ func parseFile(args parseArgs) {
 						case ast.SourcePhase:
 							phase = ".source"
 						}
+						prettyPath := patternText
 						switch record.GlobPattern.Kind {
 						case ast.ImportRequire:
-							prettyPath = fmt.Sprintf("require%s(%q)", phase, prettyPath)
+							prettyPath = fmt.Sprintf("require%s(%q)", phase, patternText)
 						case ast.ImportDynamic:
-							prettyPath = fmt.Sprintf("import%s(%q)", phase, prettyPath)
+							prettyPath = fmt.Sprintf("import%s(%q)", phase, patternText)
 						}
 						if results, msg := args.res.ResolveGlob(absResolveDir, record.GlobPattern.Parts, record.GlobPattern.Kind, prettyPath); results != nil {
 							if msg != nil {
@@ -553,6 +591,7 @@ func parseFile(args parseArgs) {
 							absResolveDir,
 							pluginData,
 							args.options.LogPathStyle,
+							false,
 						)
 						if resolveResult != nil {
 							resolveResult.PathPair.Primary.ImportAttributes = attrs
@@ -1047,6 +1086,7 @@ func RunOnResolvePlugins(
 	absResolveDir string,
 	pluginData interface{},
 	logPathStyle logger.PathStyle,
+	skipResolve bool,
 ) (*resolver.ResolveResult, bool, resolver.DebugMeta) {
 	resolverArgs := config.OnResolveArgs{
 		Path:       path,
@@ -1133,6 +1173,10 @@ func RunOnResolvePlugins(
 				PrimarySideEffectsData: sideEffectsData,
 			}, false, resolver.DebugMeta{}
 		}
+	}
+
+	if skipResolve {
+		return nil, false, resolver.DebugMeta{}
 	}
 
 	// Resolve relative to the resolve directory by default. All paths in the
@@ -1773,6 +1817,7 @@ func (s *scanner) preprocessInjectedFiles() {
 				injectAbsResolveDir,
 				nil,
 				s.options.LogPathStyle,
+				false,
 			)
 			if resolveResult != nil {
 				if resolveResult.PathPair.IsExternal {
@@ -1954,6 +1999,7 @@ func (s *scanner) addEntryPoints(entryPoints []EntryPoint) []graph.EntryPoint {
 				entryPointAbsResolveDir,
 				nil,
 				s.options.LogPathStyle,
+				false,
 			)
 			if resolveResult != nil {
 				if resolveResult.PathPair.IsExternal {

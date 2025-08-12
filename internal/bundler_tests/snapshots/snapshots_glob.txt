@@ -173,6 +173,66 @@ console.log({
 });
 
 ================================================================================
+TestGlobPluginExternal
+---------- /out.js ----------
+// entry.js
+import { globRequire } from "@/**/*";
+import { globImport } from "@/**/*";
+var ab = Math.random() < 0.5 ? "a.js" : "b.js";
+console.log({
+  concat: {
+    require: globRequire("@/" + ab),
+    import: globImport("@/" + ab)
+  },
+  template: {
+    require: globRequire(`@/${ab}`),
+    import: globImport(`@/${ab}`)
+  }
+});
+
+================================================================================
+TestGlobPluginRewrite
+---------- /out.js ----------
+// src/a.js
+var require_a = __commonJS({
+  "src/a.js"(exports, module) {
+    module.exports = "a";
+  }
+});
+
+// src/b.js
+var require_b = __commonJS({
+  "src/b.js"(exports, module) {
+    module.exports = "b";
+  }
+});
+
+// require("/src/**/*") in entry.js
+var globRequire = __glob({
+  "/src/a.js": () => require_a(),
+  "/src/b.js": () => require_b()
+});
+
+// import("/src/**/*") in entry.js
+var globImport = __glob({
+  "/src/a.js": () => Promise.resolve().then(() => __toESM(require_a())),
+  "/src/b.js": () => Promise.resolve().then(() => __toESM(require_b()))
+});
+
+// entry.js
+var ab = Math.random() < 0.5 ? "a.js" : "b.js";
+console.log({
+  concat: {
+    require: globRequire("@/" + ab),
+    import: globImport("@/" + ab)
+  },
+  template: {
+    require: globRequire(`@/${ab}`),
+    import: globImport(`@/${ab}`)
+  }
+});
+
+================================================================================
 TestGlobWildcardNoSlash
 ---------- /out.js ----------
 // src/file-a.js
