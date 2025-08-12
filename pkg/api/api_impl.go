@@ -2126,6 +2126,7 @@ func loadPlugins(initialOptions *BuildOptions, fs fs.FS, log logger.Log, caches 
 				absResolveDir,
 				options.PluginData,
 				optionsClone.LogPathStyle,
+				false,
 			)
 			msgs := log.Done()
 

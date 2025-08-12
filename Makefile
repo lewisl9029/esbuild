@@ -58,7 +58,7 @@ no-filepath:
 # 1.17.2, which will crash when run in an environment with over 4096
 # bytes of environment variable data such as GitHub Actions.
 test-wasm-node: esbuild
-	env -i $(shell go env) PATH="$(shell go env GOROOT)/misc/wasm:$(PATH)" GOOS=js GOARCH=wasm go test ./internal/...
+	env -i $(shell go env) PATH="$(shell go env GOROOT)/misc/wasm:$(shell go env GOROOT)/lib/wasm:$(PATH)" GOOS=js GOARCH=wasm go test ./internal/...
 	node scripts/wasm-tests.js
 
 test-wasm-browser: platform-wasm | scripts/browser/node_modules
@@ -609,47 +609,48 @@ validate-build:
 	@test -n "$(TARGET)" || (echo "The environment variable TARGET must be provided" && false)
 	@test -n "$(PACKAGE)" || (echo "The environment variable PACKAGE must be provided" && false)
 	@test -n "$(SUBPATH)" || (echo "The environment variable SUBPATH must be provided" && false)
+	@test -n "$(LOCAL_DIR)" || (echo "The environment variable LOCAL_DIR must be provided" && false)
 	@echo && echo "🔷 Checking $(SCOPE)$(PACKAGE)"
 	@rm -fr validate && mkdir validate
 	@$(MAKE) --no-print-directory "$(TARGET)"
-	@curl -s "https://registry.npmjs.org/$(SCOPE)$(PACKAGE)/-/$(PACKAGE)-$(ESBUILD_VERSION).tgz" > validate/esbuild.tgz
+	@curl -fsSL "https://registry.npmjs.org/$(SCOPE)$(PACKAGE)/-/$(PACKAGE)-$(ESBUILD_VERSION).tgz" -o validate/esbuild.tgz || (echo "Package $(SCOPE)$(PACKAGE)@$(ESBUILD_VERSION) not found on npm" && false)
 	@cd validate && tar xf esbuild.tgz
-	@ls -l "npm/$(SCOPE)$(PACKAGE)/$(SUBPATH)" "validate/package/$(SUBPATH)" && \
-		shasum "npm/$(SCOPE)$(PACKAGE)/$(SUBPATH)" "validate/package/$(SUBPATH)" && \
-		cmp "npm/$(SCOPE)$(PACKAGE)/$(SUBPATH)" "validate/package/$(SUBPATH)"
+	@ls -l "npm/$(LOCAL_DIR)/$(SUBPATH)" "validate/package/$(SUBPATH)" && \
+	shasum "npm/$(LOCAL_DIR)/$(SUBPATH)" "validate/package/$(SUBPATH)" && \
+	cmp "npm/$(LOCAL_DIR)/$(SUBPATH)" "validate/package/$(SUBPATH)"
 	@rm -fr validate
 
 # This checks that the published binaries are bitwise-identical to the locally-build binaries
 validate-builds:
 	git fetch --all --tags && git checkout "v$(ESBUILD_VERSION)"
-	@$(MAKE) --no-print-directory TARGET=platform-aix-ppc64         SCOPE=@esbuild/ PACKAGE=aix-ppc64           SUBPATH=bin/esbuild  validate-build
-	@$(MAKE) --no-print-directory TARGET=platform-android-arm       SCOPE=@esbuild/ PACKAGE=android-arm         SUBPATH=esbuild.wasm validate-build
-	@$(MAKE) --no-print-directory TARGET=platform-android-arm64     SCOPE=@esbuild/ PACKAGE=android-arm64       SUBPATH=bin/esbuild  validate-build
-	@$(MAKE) --no-print-directory TARGET=platform-android-x64       SCOPE=@esbuild/ PACKAGE=android-x64         SUBPATH=esbuild.wasm validate-build
-	@$(MAKE) --no-print-directory TARGET=platform-darwin-arm64      SCOPE=@esbuild/ PACKAGE=darwin-arm64        SUBPATH=bin/esbuild  validate-build
-	@$(MAKE) --no-print-directory TARGET=platform-darwin-x64        SCOPE=@esbuild/ PACKAGE=darwin-x64          SUBPATH=bin/esbuild  validate-build
-	@$(MAKE) --no-print-directory TARGET=platform-freebsd-arm64     SCOPE=@esbuild/ PACKAGE=freebsd-arm64       SUBPATH=bin/esbuild  validate-build
-	@$(MAKE) --no-print-directory TARGET=platform-freebsd-x64       SCOPE=@esbuild/ PACKAGE=freebsd-x64         SUBPATH=bin/esbuild  validate-build
-	@$(MAKE) --no-print-directory TARGET=platform-linux-arm         SCOPE=@esbuild/ PACKAGE=linux-arm           SUBPATH=bin/esbuild  validate-build
-	@$(MAKE) --no-print-directory TARGET=platform-linux-arm64       SCOPE=@esbuild/ PACKAGE=linux-arm64         SUBPATH=bin/esbuild  validate-build
-	@$(MAKE) --no-print-directory TARGET=platform-linux-ia32        SCOPE=@esbuild/ PACKAGE=linux-ia32          SUBPATH=bin/esbuild  validate-build
-	@$(MAKE) --no-print-directory TARGET=platform-linux-loong64     SCOPE=@esbuild/ PACKAGE=linux-loong64       SUBPATH=bin/esbuild  validate-build
-	@$(MAKE) --no-print-directory TARGET=platform-linux-mips64el    SCOPE=@esbuild/ PACKAGE=linux-mips64el      SUBPATH=bin/esbuild  validate-build
-	@$(MAKE) --no-print-directory TARGET=platform-linux-ppc64       SCOPE=@esbuild/ PACKAGE=linux-ppc64         SUBPATH=bin/esbuild  validate-build
-	@$(MAKE) --no-print-directory TARGET=platform-linux-riscv64     SCOPE=@esbuild/ PACKAGE=linux-riscv64       SUBPATH=bin/esbuild  validate-build
-	@$(MAKE) --no-print-directory TARGET=platform-linux-s390x       SCOPE=@esbuild/ PACKAGE=linux-s390x         SUBPATH=bin/esbuild  validate-build
-	@$(MAKE) --no-print-directory TARGET=platform-linux-x64         SCOPE=@esbuild/ PACKAGE=linux-x64           SUBPATH=bin/esbuild  validate-build
-	@$(MAKE) --no-print-directory TARGET=platform-netbsd-arm64      SCOPE=@esbuild/ PACKAGE=netbsd-arm64        SUBPATH=bin/esbuild  validate-build
-	@$(MAKE) --no-print-directory TARGET=platform-netbsd-x64        SCOPE=@esbuild/ PACKAGE=netbsd-x64          SUBPATH=bin/esbuild  validate-build
-	@$(MAKE) --no-print-directory TARGET=platform-openbsd-arm64     SCOPE=@esbuild/ PACKAGE=openbsd-arm64       SUBPATH=bin/esbuild  validate-build
-	@$(MAKE) --no-print-directory TARGET=platform-openbsd-x64       SCOPE=@esbuild/ PACKAGE=openbsd-x64         SUBPATH=bin/esbuild  validate-build
-	@$(MAKE) --no-print-directory TARGET=platform-openharmony-arm64 SCOPE=@esbuild/ PACKAGE=openharmony-arm64   SUBPATH=esbuild.wasm validate-build
-	@$(MAKE) --no-print-directory TARGET=platform-sunos-x64         SCOPE=@esbuild/ PACKAGE=sunos-x64           SUBPATH=bin/esbuild  validate-build
-	@$(MAKE) --no-print-directory TARGET=platform-wasi-preview1     SCOPE=@esbuild/ PACKAGE=wasi-preview1       SUBPATH=esbuild.wasm validate-build
-	@$(MAKE) --no-print-directory TARGET=platform-wasm                              PACKAGE=esbuild-wasm        SUBPATH=esbuild.wasm validate-build
-	@$(MAKE) --no-print-directory TARGET=platform-win32-arm64       SCOPE=@esbuild/ PACKAGE=win32-arm64         SUBPATH=esbuild.exe  validate-build
-	@$(MAKE) --no-print-directory TARGET=platform-win32-ia32        SCOPE=@esbuild/ PACKAGE=win32-ia32          SUBPATH=esbuild.exe  validate-build
-	@$(MAKE) --no-print-directory TARGET=platform-win32-x64         SCOPE=@esbuild/ PACKAGE=win32-x64           SUBPATH=esbuild.exe  validate-build
+	@$(MAKE) --no-print-directory TARGET=platform-aix-ppc64         SCOPE=@lewisl9029/ PACKAGE=esbuild-aix-ppc64         LOCAL_DIR=@esbuild/aix-ppc64         SUBPATH=bin/esbuild    validate-build
+	@$(MAKE) --no-print-directory TARGET=platform-android-arm       SCOPE=@lewisl9029/ PACKAGE=esbuild-android-arm       LOCAL_DIR=@esbuild/android-arm       SUBPATH=esbuild.wasm   validate-build
+	@$(MAKE) --no-print-directory TARGET=platform-android-arm64     SCOPE=@lewisl9029/ PACKAGE=esbuild-android-arm64     LOCAL_DIR=@esbuild/android-arm64     SUBPATH=bin/esbuild    validate-build
+	@$(MAKE) --no-print-directory TARGET=platform-android-x64       SCOPE=@lewisl9029/ PACKAGE=esbuild-android-x64       LOCAL_DIR=@esbuild/android-x64       SUBPATH=esbuild.wasm   validate-build
+	@$(MAKE) --no-print-directory TARGET=platform-darwin-arm64      SCOPE=@lewisl9029/ PACKAGE=esbuild-darwin-arm64      LOCAL_DIR=@esbuild/darwin-arm64      SUBPATH=bin/esbuild    validate-build
+	@$(MAKE) --no-print-directory TARGET=platform-darwin-x64        SCOPE=@lewisl9029/ PACKAGE=esbuild-darwin-x64        LOCAL_DIR=@esbuild/darwin-x64        SUBPATH=bin/esbuild    validate-build
+	@$(MAKE) --no-print-directory TARGET=platform-freebsd-arm64     SCOPE=@lewisl9029/ PACKAGE=esbuild-freebsd-arm64     LOCAL_DIR=@esbuild/freebsd-arm64     SUBPATH=bin/esbuild    validate-build
+	@$(MAKE) --no-print-directory TARGET=platform-freebsd-x64       SCOPE=@lewisl9029/ PACKAGE=esbuild-freebsd-x64       LOCAL_DIR=@esbuild/freebsd-x64       SUBPATH=bin/esbuild    validate-build
+	@$(MAKE) --no-print-directory TARGET=platform-linux-arm         SCOPE=@lewisl9029/ PACKAGE=esbuild-linux-arm         LOCAL_DIR=@esbuild/linux-arm         SUBPATH=bin/esbuild    validate-build
+	@$(MAKE) --no-print-directory TARGET=platform-linux-arm64       SCOPE=@lewisl9029/ PACKAGE=esbuild-linux-arm64       LOCAL_DIR=@esbuild/linux-arm64       SUBPATH=bin/esbuild    validate-build
+	@$(MAKE) --no-print-directory TARGET=platform-linux-ia32        SCOPE=@lewisl9029/ PACKAGE=esbuild-linux-ia32        LOCAL_DIR=@esbuild/linux-ia32        SUBPATH=bin/esbuild    validate-build
+	@$(MAKE) --no-print-directory TARGET=platform-linux-loong64     SCOPE=@lewisl9029/ PACKAGE=esbuild-linux-loong64     LOCAL_DIR=@esbuild/linux-loong64     SUBPATH=bin/esbuild    validate-build
+	@$(MAKE) --no-print-directory TARGET=platform-linux-mips64el    SCOPE=@lewisl9029/ PACKAGE=esbuild-linux-mips64el    LOCAL_DIR=@esbuild/linux-mips64el    SUBPATH=bin/esbuild    validate-build
+	@$(MAKE) --no-print-directory TARGET=platform-linux-ppc64       SCOPE=@lewisl9029/ PACKAGE=esbuild-linux-ppc64       LOCAL_DIR=@esbuild/linux-ppc64       SUBPATH=bin/esbuild    validate-build
+	@$(MAKE) --no-print-directory TARGET=platform-linux-riscv64     SCOPE=@lewisl9029/ PACKAGE=esbuild-linux-riscv64     LOCAL_DIR=@esbuild/linux-riscv64     SUBPATH=bin/esbuild    validate-build
+	@$(MAKE) --no-print-directory TARGET=platform-linux-s390x       SCOPE=@lewisl9029/ PACKAGE=esbuild-linux-s390x       LOCAL_DIR=@esbuild/linux-s390x       SUBPATH=bin/esbuild    validate-build
+	@$(MAKE) --no-print-directory TARGET=platform-linux-x64         SCOPE=@lewisl9029/ PACKAGE=esbuild-linux-x64         LOCAL_DIR=@esbuild/linux-x64         SUBPATH=bin/esbuild    validate-build
+	@$(MAKE) --no-print-directory TARGET=platform-netbsd-arm64      SCOPE=@lewisl9029/ PACKAGE=esbuild-netbsd-arm64      LOCAL_DIR=@esbuild/netbsd-arm64      SUBPATH=bin/esbuild    validate-build
+	@$(MAKE) --no-print-directory TARGET=platform-netbsd-x64        SCOPE=@lewisl9029/ PACKAGE=esbuild-netbsd-x64        LOCAL_DIR=@esbuild/netbsd-x64        SUBPATH=bin/esbuild    validate-build
+	@$(MAKE) --no-print-directory TARGET=platform-openbsd-arm64     SCOPE=@lewisl9029/ PACKAGE=esbuild-openbsd-arm64     LOCAL_DIR=@esbuild/openbsd-arm64     SUBPATH=bin/esbuild    validate-build
+	@$(MAKE) --no-print-directory TARGET=platform-openbsd-x64       SCOPE=@lewisl9029/ PACKAGE=esbuild-openbsd-x64       LOCAL_DIR=@esbuild/openbsd-x64       SUBPATH=bin/esbuild    validate-build
+	@$(MAKE) --no-print-directory TARGET=platform-openharmony-arm64 SCOPE=@lewisl9029/ PACKAGE=esbuild-openharmony-arm64 LOCAL_DIR=@esbuild/openharmony-arm64 SUBPATH=esbuild.wasm   validate-build
+	@$(MAKE) --no-print-directory TARGET=platform-sunos-x64         SCOPE=@lewisl9029/ PACKAGE=esbuild-sunos-x64         LOCAL_DIR=@esbuild/sunos-x64         SUBPATH=bin/esbuild    validate-build
+	@$(MAKE) --no-print-directory TARGET=platform-wasi-preview1     SCOPE=@lewisl9029/ PACKAGE=esbuild-wasi-preview1     LOCAL_DIR=@esbuild/wasi-preview1     SUBPATH=esbuild.wasm   validate-build
+	@$(MAKE) --no-print-directory TARGET=platform-wasm                              PACKAGE=esbuild-wasm            LOCAL_DIR=esbuild-wasm               SUBPATH=esbuild.wasm   validate-build
+	@$(MAKE) --no-print-directory TARGET=platform-win32-arm64       SCOPE=@lewisl9029/ PACKAGE=esbuild-win32-arm64       LOCAL_DIR=@esbuild/win32-arm64       SUBPATH=esbuild.exe    validate-build
+	@$(MAKE) --no-print-directory TARGET=platform-win32-ia32        SCOPE=@lewisl9029/ PACKAGE=esbuild-win32-ia32        LOCAL_DIR=@esbuild/win32-ia32        SUBPATH=esbuild.exe    validate-build
+	@$(MAKE) --no-print-directory TARGET=platform-win32-x64         SCOPE=@lewisl9029/ PACKAGE=esbuild-win32-x64         LOCAL_DIR=@esbuild/win32-x64         SUBPATH=esbuild.exe    validate-build
 
 clean:
 	go clean -cache

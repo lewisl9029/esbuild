@@ -16321,11 +16321,6 @@ func (p *parser) handleGlobPattern(expr js_ast.Expr, kind ast.ImportKind, phase 
 		return js_ast.Expr{}
 	}
 
-	// We currently only support relative globs
-	if prefix := parts[0].Prefix; !strings.HasPrefix(prefix, "./") && !strings.HasPrefix(prefix, "../") {
-		return js_ast.Expr{}
-	}
-
 	ref := ast.InvalidRef
 
 	// Don't generate duplicate glob imports

@@ -68,7 +68,7 @@ async function installFromNPM(name: string, subpath: string): Promise<string> {
   }
 
   const npmRegistry = Deno.env.get("NPM_CONFIG_REGISTRY") || "https://registry.npmjs.org"
-  const url = `${npmRegistry}/${name}/-/${name.replace("@esbuild/", "")}-${version}.tgz`
+  const url = `${npmRegistry}/${name}/-/${name.replace("@lewisl9029/", "")}-${version}.tgz`
   const buffer = await fetch(url).then(r => r.arrayBuffer())
   const executable = extractFileFromTarGzip(new Uint8Array(buffer), subpath)
 
@@ -144,19 +144,19 @@ async function install(): Promise<string> {
 
   const platformKey = Deno.build.target
   const knownWindowsPackages: Record<string, string> = {
-    'x86_64-pc-windows-msvc': '@esbuild/win32-x64',
+    'x86_64-pc-windows-msvc': '@lewisl9029/esbuild-win32-x64',
   }
   const knownUnixlikePackages: Record<string, string> = {
     // These are the only platforms that Deno supports
-    'aarch64-apple-darwin': '@esbuild/darwin-arm64',
-    'aarch64-unknown-linux-gnu': '@esbuild/linux-arm64',
-    'x86_64-apple-darwin': '@esbuild/darwin-x64',
-    'x86_64-unknown-linux-gnu': '@esbuild/linux-x64',
+    'aarch64-apple-darwin': '@lewisl9029/esbuild-darwin-arm64',
+    'aarch64-unknown-linux-gnu': '@lewisl9029/esbuild-linux-arm64',
+    'x86_64-apple-darwin': '@lewisl9029/esbuild-darwin-x64',
+    'x86_64-unknown-linux-gnu': '@lewisl9029/esbuild-linux-x64',
 
     // These platforms are not supported by Deno
-    'aarch64-linux-android': '@esbuild/android-arm64',
-    'x86_64-unknown-freebsd': '@esbuild/freebsd-x64',
-    "x86_64-alpine-linux-musl": '@esbuild/linux-x64',
+    'aarch64-linux-android': '@lewisl9029/esbuild-android-arm64',
+    'x86_64-unknown-freebsd': '@lewisl9029/esbuild-freebsd-x64',
+    "x86_64-alpine-linux-musl": '@lewisl9029/esbuild-linux-x64',
   }
 
   // Pick a package to install
