@@ -1,0 +1,25 @@
+name: Publish to npm
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          registry-url: https://registry.npmjs.org
+      - name: Publish package
+        run: npm publish
+        working-directory: npm/esbuild
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
