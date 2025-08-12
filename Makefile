@@ -613,7 +613,7 @@ validate-build:
 	@echo && echo "🔷 Checking $(SCOPE)$(PACKAGE)"
 	@rm -fr validate && mkdir validate
 	@$(MAKE) --no-print-directory "$(TARGET)"
-	@curl -s "https://registry.npmjs.org/$(SCOPE)$(PACKAGE)/-/$(PACKAGE)-$(ESBUILD_VERSION).tgz" > validate/esbuild.tgz
+	@curl -fsSL "https://registry.npmjs.org/$(SCOPE)$(PACKAGE)/-/$(PACKAGE)-$(ESBUILD_VERSION).tgz" -o validate/esbuild.tgz || (echo "Package $(SCOPE)$(PACKAGE)@$(ESBUILD_VERSION) not found on npm" && false)
 	@cd validate && tar xf esbuild.tgz
 	@ls -l "npm/$(LOCAL_DIR)/$(SUBPATH)" "validate/package/$(SUBPATH)" && \
 	shasum "npm/$(LOCAL_DIR)/$(SUBPATH)" "validate/package/$(SUBPATH)" && \
